@@ -13,6 +13,21 @@
   }
 }
 
+.Current-word {
+  padding: 1%;
+}
+
+.Selected-current-word {
+  padding: 1%;
+  background: black;
+  border-radius: 0.2em;
+}
+
+.Selected-character {
+  text-decoration: underline;
+  text-emphasis: emphasis;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -28,10 +43,17 @@
   color: #61dafb;
 }
 
+.Read-word-area {
+  width: 50%;
+  height: 50px;
+  font-size: calc(10px + 2vmin);
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
