@@ -3,72 +3,139 @@ import React, { useState, useEffect } from 'react'
 import words from '../words';
 import { shuffleArray } from '../util';
 import '../App.css';
+import Refresh from '../refresh';
+import Clock from '../clock';
+const countDownTime = 60;
 
 export default () => {
-	let wordList = shuffleArray(words);
+	const [wordList, setWordList] = useState(shuffleArray(words));
 	const visibleWordLength = 10;
 	const [start, setStart] = useState(0);
+	const [showWPS, setShowWPS] = useState(false);
+	const [WPS, setWPS] = useState(0);
+
 	const [currentWords, setCurrentWords] = useState(wordList.slice(start, visibleWordLength));
+	const [nextWords, setNextWords] = useState(wordList.slice(visibleWordLength, 2 * visibleWordLength));
 	const [currentWordIndex, setCurrentWordIndex] = useState(0);
 	const [typedWord, setTypedWord] = useState('');
 
-	let [pressedKey, setPressedKey] = usePressedKey();
+	const [pressedKey, setPressedKey] = usePressedKey();
+
+	const [remainingTime, startCountDown, resetCountDown] = useCountDown(countDownTime);
 
 	const handleInputWord = (event) => {
+		startCountDown(true);
 		setTypedWord(event.target.value);
 	}
 
+	let refresh = () => {
+		let wordList = shuffleArray(words);
+		setWordList(wordList);
+		setStart(0);
+		setCurrentWordIndex(0);
+		setCurrentWords(wordList.slice(0, visibleWordLength));
+		setNextWords(wordList.slice(visibleWordLength, 2 * visibleWordLength));
+		setTypedWord('');
+		resetCountDown();
+		setShowWPS(false);
+		setWPS(0);
+	}
+
 	useEffect(() => {
-		console.log(pressedKey)
-		if (!pressedKey)
+		if (remainingTime === 0) {
+
+			setShowWPS(true);
+		}
+	}, [remainingTime])
+
+	useEffect(() => {
+
+		// if no key pressed
+		if (!pressedKey || showWPS)
 			return
+
+		// if it is enter or space
 		if (pressedKey === ' ' || pressedKey === 'Enter') {
+			// clear the input field
 			setTypedWord('')
+
+			// if both are same
 			if (typedWord === currentWords[start]) {
 
-
-				// console.log((start + 1) % visibleWordLength)
 				if ((start + 1) % visibleWordLength === 0) {
-					setCurrentWords(wordList.slice(start + 1, start + 1 + visibleWordLength))
+
+					setCurrentWords(nextWords);
+
+					setNextWords(wordList.slice(start + 1 + visibleWordLength, start + 1 + 2 * visibleWordLength))
 					setStart(0)
 				}
 				else
 					setStart(start + 1)
+
+				setWPS(WPS + typedWord.length + 1)
 			}
 			setCurrentWordIndex(0)
 
 		}
 		else if (pressedKey === 'Backspace') {
-			console.log((currentWordIndex - 1) > 0 ? (currentWordIndex - 1) : 0)
-			console.log(typedWord.slice(0, typedWord.length - 1))
-			setCurrentWordIndex((currentWordIndex - 1) > 0 ? (currentWordIndex - 1) : 0)
 			setTypedWord(typedWord.slice(0, typedWord.length - 1))
 			setPressedKey('')
 		}
 		else {
-			// console.log(currentWords[start][currentWordIndex])
-			// console.log(typedWord)
-			if (currentWords[start][currentWordIndex] === typedWord[typedWord.length - 1])
+
+			if (currentWords[start][currentWordIndex] === typedWord[typedWord.length - 1] && currentWords[start].substr(0, typedWord.length) === typedWord)
 				setCurrentWordIndex(currentWordIndex + 1)
+			else {
+				// count incorrect words
+			}
+
 		}
-	}, [pressedKey, currentWordIndex, typedWord, currentWords, start, wordList, setPressedKey])
+	}, [pressedKey, currentWordIndex, typedWord, currentWords, start, wordList, setPressedKey, showWPS])
 
 
 	return (
-		<div>
-			<p>
+		<>
+			<div>
 				<ReadSentence
 					currentWords={currentWords}
 					currentWord={currentWords[start]}
 					currentWordIndex={currentWordIndex}
 				/>
-			</p>
-			<input
-				className='Read-word-area'
-				type="text"
-				value={typedWord}
-				onChange={handleInputWord} />
-		</div>
+			</div>
+			<div>
+				<ReadSentence
+					currentWords={nextWords}
+				/>
+			</div>
+			<div>
+				<input
+					className='Read-word-area'
+					type="text"
+					value={typedWord}
+					onChange={handleInputWord}
+					autofocus
+					disabled={showWPS}
+				/>
+				{/* <button>
+					Refresh
+				</button> */}
+				<button className="refresh-button" onClick={refresh}>
+					<Refresh />
+				</button>
+
+				<button className="refresh-button">
+					<Clock />
+					<span style={{ fontSize: "3vh" }}>  {remainingTime}</span>
+				</button>
+			</div>
+			{
+				showWPS &&
+				(
+					`Your speed is ${WPS / 5} WPM \n click refresh to start again`
+				)
+			}
+
+		</>
 	)
 }
 
@@ -88,7 +155,7 @@ const ReadSentence = ({ currentWords, currentWord, currentWordIndex }) => {
 									(cIndex === currentWordIndex)
 									? 'Selected-character' : 'Current-character'
 							}>
-							{/* {console.log(cIndex, currentWordIndex)} */}
+
 							{character}
 						</span>)
 					)
@@ -106,12 +173,6 @@ const usePressedKey = () => {
 	useEffect(() => {
 		const onKeyDown = ({ key }) => setPressedKey(key)
 
-		// const onKeyUp = ({ key }) => {
-		// 	if (Consts.ALLOWED_KEYS.includes(key)) {
-		// 		setPressedKeys(previousPressedKeys => previousPressedKeys.filter(k => k !== key));
-		// 	}
-		// }
-
 		document.addEventListener('keydown', onKeyDown);
 
 		return () => {
@@ -121,4 +182,34 @@ const usePressedKey = () => {
 	});
 
 	return [pressedKey, setPressedKey];
+}
+
+const useCountDown = () => {
+
+	const [remainingTime, setRemainingTime] = useState(countDownTime);
+	const [countDownStarted, setCountDownStarted] = useState(false);
+
+	const resetCountDown = () => {
+		setRemainingTime(countDownTime);
+		setCountDownStarted(false)
+	};
+
+	useEffect(() => {
+		if (!countDownStarted)
+			return;
+
+		if (remainingTime === 0)
+			setCountDownStarted(false);
+
+		let timer = setTimeout(() => setRemainingTime(remainingTime - 1), 1000);
+		return () => {
+			clearInterval(timer);
+		}
+	}, [remainingTime, countDownStarted]);
+
+	return [
+		remainingTime,
+		setCountDownStarted,
+		resetCountDown,
+	];
 }

@@ -44,9 +44,16 @@
 }
 
 .Read-word-area {
-  width: 50%;
-  height: 50px;
+  height: 5vh;
+  border-radius: 0.25em;
   font-size: calc(10px + 2vmin);
+  margin-top: 2vh;
+  width: 30vw;
+}
+
+.refresh-button {
+  margin-left: 2vh;
+  height: 5vh;
 }
 
 @keyframes App-logo-spin {
