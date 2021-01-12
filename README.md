@@ -1,4 +1,7 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Typing Master - 
+### calculate your typing speed at [her](https://yawningphantom.github.io/typing-master/)
+
+## To run your typing script
 
 ## Available Scripts
 
