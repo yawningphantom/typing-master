@@ -1,5 +1,5 @@
 # Typing Master - 
-### calculate your typing speed at [her](https://yawningphantom.github.io/typing-master/)
+### calculate your typing speed at [here](https://yawningphantom.github.io/typing-master/)
 
 ## To run your typing script
 
